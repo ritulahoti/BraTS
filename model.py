@@ -355,11 +355,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
-        activation='sigmoid',
+        activation='softmax',
         name='Dec_GT_Output')(x)
 
     ### Output Block
-    out_GT = Softmax(axis=1)(x)
+    #out_GT = Softmax(axis=1)(x)
     
     
     ## VAE (Variational Auto Encoder) Part

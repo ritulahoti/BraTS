@@ -1,8 +1,3 @@
-# Keras implementation of the paper:
-# 3D MRI Brain Tumor Segmentation Using Autoencoder Regularization
-# by Myronenko A. (https://arxiv.org/pdf/1810.11654.pdf)
-# Author of this code: Suyog Jadhav (https://github.com/IAmSUyogJadhav)
-
 import keras.backend as K
 from keras.losses import mse
 from keras.layers import Conv3D, Activation, Add, UpSampling3D, Lambda, Dense
@@ -449,10 +444,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=2, weight_L2=0.1
     # Build and Compile the model
     out = out_GT
     model = Model(inp, outputs=[out, out_VAE])  # Create the model
+    model_predict = Model(inp, outputs=[out])
     model.compile(
         adam(lr=1e-4),
         [loss_gt(dice_e), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
         metrics=[dice_coefficient]
     )
 
-    return model
+    return (model, model_predict)

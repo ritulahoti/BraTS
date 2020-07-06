@@ -443,12 +443,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=2, weight_L2=0.1
 
     # Build and Compile the model
     out = out_GT
-    model = Model(inp, outputs=[out, out_VAE])  # Create the model
-    model_predict = Model(inp, outputs=[out])
+    model = Model(inp, outputs=out)  # Create the model
     model.compile(
         adam(lr=1e-4),
         [loss_gt(dice_e), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
         metrics=[dice_coefficient]
     )
 
-    return (model, model_predict)
+    return model

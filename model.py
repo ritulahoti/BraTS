@@ -191,7 +191,7 @@ def loss_VAE(input_shape, z_mean, z_var, weight_L2=0.1, weight_KL=0.1):
 
     return loss_VAE_
 
-def build_model(input_shape=(4, 160, 192, 128), output_channels=1, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
+def build_model(input_shape=(4, 160, 192, 128), output_channels=2, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     """
     build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1, weight_KL=0.1)
     -------------------------------------------

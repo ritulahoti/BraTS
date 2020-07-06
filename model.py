@@ -191,7 +191,7 @@ def loss_VAE(input_shape, z_mean, z_var, weight_L2=0.1, weight_KL=0.1):
 
     return loss_VAE_
 
-def build_model(input_shape=(4, 160, 192, 128), output_channels=2, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
+def build_model(input_shape=(4, 160, 192, 128), output_channels=1, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     """
     build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1, weight_KL=0.1)
     -------------------------------------------
@@ -345,7 +345,14 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=2, weight_L2=0.1
         name='Input_Dec_GT_Output')(x)
 
     ### Output Block 
-    out_GT = Dense(2, activation='softmax')(x)
+    out_GT = Conv3D(
+        filters=output_channels,  # No. of tumor classes is 3
+        kernel_size=(1, 1, 1),
+        strides=1,
+        data_format='channels_first',
+        activation='softmax',
+        name='Dec_GT_Output')(x)
+
     
     ## VAE (Variational Auto Encoder) Part
     # -------------------------------------------------------------------------
@@ -443,7 +450,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=2, weight_L2=0.1
 
     # Build and Compile the model
     out = out_GT
-    model = Model(inp, outputs=out)  # Create the model
+    model = Model(inp, outputs=[out,out_VAE])  # Create the model
     model.compile(
         adam(lr=1e-4),
         [loss_gt(dice_e), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],

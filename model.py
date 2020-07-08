@@ -454,7 +454,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=1, weight_L2=0.1
     model.compile(
         adam(lr=1e-4),
         [loss_gt(dice_e), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
-        metrics=[dice_coefficient, accuracy]
+        metrics=[dice_coefficient]
     )
 
     return model

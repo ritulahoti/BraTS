@@ -344,15 +344,7 @@ def build_model(input_shape, output_channels, weight_L2=0.1, weight_KL=0.1, dice
         data_format='channels_first',
         name='Input_Dec_GT_Output')(x)
 
-    ### Output Block 
-    out_GT = Conv3D(
-        filters=output_channels,  # No. of tumor classes is 3
-        kernel_size=(1, 1, 1),
-        strides=1,
-        data_format='channels_first',
-        activation='softmax',
-        name='Dec_GT_Output')(x)
-
+    out_GT = Dense(1, activation='softmax')(x)
     
     ## VAE (Variational Auto Encoder) Part
     # -------------------------------------------------------------------------

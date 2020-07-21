@@ -453,8 +453,8 @@ def build_model(input_shape, output_channels, weight_L2=0.1, weight_KL=0.1, dice
     model = Model(inp, outputs=[out,out_VAE])  # Create the model
     model.compile(
         adam(lr=1e-4),
-        [loss_gt(dice_e), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
-        metrics=['accuracy']
+        [loss_gt("binary_crossentropy"), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
+        metrics=["accuracy"]
     )
 
     return model

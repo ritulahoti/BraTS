@@ -516,6 +516,4 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     my_loss = losses.categorical_crossentropy
     model.compile(loss='categorical_crossentropy', optimizer=my_adam, metrics=['accuracy'])
 
-    )
-
     return model

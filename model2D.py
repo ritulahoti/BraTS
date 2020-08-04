@@ -110,7 +110,7 @@ def sampling(args):
 def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     input_shapeA = (92,128,128)
     c, H, W = input_shapeA
-    assert len(input_shapeA) == 4, "Input shape must be a 4-tuple"
+    assert len(input_shapeA) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
     assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
 
@@ -241,7 +241,7 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     # ---------------- SAGITTAL -----------
     input_shapeS = (128,92,128)
     c, H, W = input_shapeS
-    assert len(input_shapeS) == 4, "Input shape must be a 4-tuple"
+    assert len(input_shapeS) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
     assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
 
@@ -372,7 +372,7 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     # ------------------------ CORONAL ----------
     input_shapeC = (128,92,128)
     c, H, W = input_shapeC
-    assert len(input_shapeC) == 4, "Input shape must be a 4-tuple"
+    assert len(input_shapeC) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
     assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
 

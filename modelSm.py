@@ -3,6 +3,10 @@ from keras.losses import mse
 from keras.layers import Conv2D, Activation, Add, UpSampling2D, Lambda, Dense
 from keras.layers import Input, Reshape, Flatten, Dropout, SpatialDropout2D
 from keras.optimizers import adam
+from keras.layers.advanced_activations import LeakyReLU
+from keras.layers.normalization import BatchNormalization
+from keras import losses
+from keras.layers.core import Dropout, Activation, Flatten
 from keras.models import Model
 try:
     from group_norm import GroupNormalization
@@ -100,89 +104,284 @@ def sampling(args):
     epsilon = K.random_normal(shape=(batch, dim))
     return z_mean + K.exp(0.5 * z_var) * epsilon
 
-
-def dice_coefficient(y_true, y_pred):
-    intersection = K.sum(K.abs(y_true * y_pred), axis=[-2,-1])
-    dn = K.sum(K.square(y_true) + K.square(y_pred), axis=[-2,-1]) + 1e-8
-    return K.mean(2 * intersection / dn, axis=[0,1])
-
-
-def loss_gt(e=1e-8):
-    """
-    loss_gt(e=1e-8)
-    ------------------------------------------------------
-    Since keras does not allow custom loss functions to have arguments
-    other than the true and predicted labels, this function acts as a wrapper
-    that allows us to implement the custom loss used in the paper. This function
-    only calculates - L<dice> term of the following equation. (i.e. GT Decoder part loss)
     
-    L = - L<dice> + weight_L2 âˆ— L<L2> + weight_KL âˆ— L<KL>
+    # -------------------------------------------------------------------------
     
-    Parameters
-    ----------
-    `e`: Float, optional
-        A small epsilon term to add in the denominator to avoid dividing by
-        zero and possible gradient explosion.
-        
-    Returns
-    -------
-    loss_gt_(y_true, y_pred): A custom keras loss function
-        This function takes as input the predicted and ground labels, uses them
-        to calculate the dice loss.
-        
-    """
-    def loss_gt_(y_true, y_pred):
-        intersection = K.sum(K.abs(y_true * y_pred), axis=[-2,-1])
-        dn = K.sum(K.square(y_true) + K.square(y_pred), axis=[-2,-1]) + e
-        
-        return - K.mean(2 * intersection / dn, axis=[0,1])
-    
-    return loss_gt_
-
-
-def build_model(input_shape, output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
-    """
-    build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1, weight_KL=0.1)
-    -------------------------------------------
-    Creates the model used in the BRATS2018 winning solution
-    by Myronenko A. (https://arxiv.org/pdf/1810.11654.pdf)
-
-    Parameters
-    ----------
-    `input_shape`: A 4-tuple, optional.
-        Shape of the input image. Must be a 4D image of shape (c, H, W, D),
-        where, each of H, W and D are divisible by 2^4, and c is divisible by 4.
-        Defaults to the crop size used in the paper, i.e., (4, 160, 192, 128).
-    `output_channels`: An integer, optional.
-        The no. of channels in the output. Defaults to 3 (BraTS 2018 format).
-    `weight_L2`: A real number, optional
-        The weight to be given to the L2 loss term in the loss function. Adjust to get best
-        results for your task. Defaults to 0.1.
-    `weight_KL`: A real number, optional
-        The weight to be given to the KL loss term in the loss function. Adjust to get best
-        results for your task. Defaults to 0.1.
-    `dice_e`: Float, optional
-        A small epsilon term to add in the denominator of dice loss to avoid dividing by
-        zero and possible gradient explosion. This argument will be passed to loss_gt function.
-
-
-    Returns
-    -------
-    `model`: A keras.models.Model instance
-        The created model.
-    """
-    c, H, W = input_shape
-    assert len(input_shape) == 4, "Input shape must be a 4-tuple"
+def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
+    input_shapeA = (92,128,128)
+    c, H, W = input_shapeA
+    assert len(input_shapeA) == 4, "Input shape must be a 4-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
     assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
 
+    # -------------------------------------------------------------------------
+    # Encoder
+    # --------------------- AXIAL ---------------------
+    
+    ## Input Layer
+    inpA = Input(input_shapeA)
+
+    ## The Initial Block
+    x = Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        strides=1,
+        padding='same',
+        data_format='channels_first',
+        name='Input_x1')(inpA)
+
+    ## Dropout (0.2)
+    x = SpatialDropout2D(0.2, data_format='channels_first')(x)
+
+    ## Green Block x1 (output filters = 32)
+    x1 = green_block(x, 32, name='x1')
+    x = Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        strides=2,
+        padding='same',
+        data_format='channels_first',
+        name='Enc_DownSample_32')(x1)
+
+    ## Green Block x2 (output filters = 64)
+    x = green_block(x, 64, name='Enc_64_1')
+    x2 = green_block(x, 64, name='x2')
+    x = Conv2D(
+        filters=64,
+        kernel_size=(3, 3),
+        strides=2,
+        padding='same',
+        data_format='channels_first',
+        name='Enc_DownSample_64')(x2)
+
+    ## Green Blocks x2 (output filters = 128)
+    x = green_block(x, 128, name='Enc_128_1')
+    x3 = green_block(x, 128, name='x3')
+    x = Conv2D(
+        filters=128,
+        kernel_size=(3, 3),
+        strides=2,
+        padding='same',
+        data_format='channels_first',
+        name='Enc_DownSample_128')(x3)
+
+    ## Green Blocks x4 (output filters = 256)
+    x = green_block(x, 256, name='Enc_256_1')
+    x = green_block(x, 256, name='Enc_256_2')
+    x = green_block(x, 256, name='Enc_256_3')
+    x4 = green_block(x, 256, name='x4')
+
+    # -------------------------------------------------------------------------
+    # Decoder
+    # -------------------------------------------------------------------------
+
+    ## GT (Groud Truth) Part
+    # -------------------------------------------------------------------------
+
+    ### Green Block x1 (output filters=128)
+    x = Conv2D(
+        filters=128,
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        name='Dec_GT_ReduceDepth_128')(x4)
+    x = UpSampling2D(
+        size=2,
+        data_format='channels_first',
+        name='Dec_GT_UpSample_128')(x)
+    x = Add(name='Input_Dec_GT_128')([x, x3])
+    x = green_block(x, 128, name='Dec_GT_128')
+
+    ### Green Block x1 (output filters=64)
+    x = Conv2D(
+        filters=64,
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        name='Dec_GT_ReduceDepth_64')(x)
+    x = UpSampling2D(
+        size=2,
+        data_format='channels_first',
+        name='Dec_GT_UpSample_64')(x)
+    x = Add(name='Input_Dec_GT_64')([x, x2])
+    x = green_block(x, 64, name='Dec_GT_64')
+
+    ### Green Block x1 (output filters=32)
+    x = Conv2D(
+        filters=32,
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        name='Dec_GT_ReduceDepth_32')(x)
+    x = UpSampling2D(
+        size=2,
+        data_format='channels_first',
+        name='Dec_GT_UpSample_32')(x)
+    x = Add(name='Input_Dec_GT_32')([x, x1])
+    x = green_block(x, 32, name='Dec_GT_32')
+
+    ### Blue Block x1 (output filters=32)
+    x = Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        strides=1,
+        padding='same',
+        data_format='channels_first',
+        name='Input_Dec_GT_Output')(x)
+
+    ### Output Block 
+    out_GT_A = Conv2D(
+        filters=output_channels,  # No. of tumor classes is 3
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        activation='sigmoid',
+        name='Dec_GT_Output')(x)
+
+    # ---------------- SAGITTAL -----------
+    input_shapeS = (128,92,128)
+    c, H, W = input_shapeS
+    assert len(input_shapeS) == 4, "Input shape must be a 4-tuple"
+    assert (c % 4) == 0, "The no. of channels must be divisible by 4"
+    assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
 
     # -------------------------------------------------------------------------
     # Encoder
     # -------------------------------------------------------------------------
 
     ## Input Layer
-    inp = Input(input_shape)
+    inpS = Input(input_shapeS)
+
+    ## The Initial Block
+    x = Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        strides=1,
+        padding='same',
+        data_format='channels_first',
+        name='Input_x1')(inpS)
+
+    ## Dropout (0.2)
+    x = SpatialDropout2D(0.2, data_format='channels_first')(x)
+
+    ## Green Block x1 (output filters = 32)
+    x1 = green_block(x, 32, name='x1')
+    x = Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        strides=2,
+        padding='same',
+        data_format='channels_first',
+        name='Enc_DownSample_32')(x1)
+
+    ## Green Block x2 (output filters = 64)
+    x = green_block(x, 64, name='Enc_64_1')
+    x2 = green_block(x, 64, name='x2')
+    x = Conv2D(
+        filters=64,
+        kernel_size=(3, 3),
+        strides=2,
+        padding='same',
+        data_format='channels_first',
+        name='Enc_DownSample_64')(x2)
+
+    ## Green Blocks x2 (output filters = 128)
+    x = green_block(x, 128, name='Enc_128_1')
+    x3 = green_block(x, 128, name='x3')
+    x = Conv2D(
+        filters=128,
+        kernel_size=(3, 3),
+        strides=2,
+        padding='same',
+        data_format='channels_first',
+        name='Enc_DownSample_128')(x3)
+
+    ## Green Blocks x4 (output filters = 256)
+    x = green_block(x, 256, name='Enc_256_1')
+    x = green_block(x, 256, name='Enc_256_2')
+    x = green_block(x, 256, name='Enc_256_3')
+    x4 = green_block(x, 256, name='x4')
+
+    # -------------------------------------------------------------------------
+    # Decoder
+    # -------------------------------------------------------------------------
+
+    ## GT (Groud Truth) Part
+    # -------------------------------------------------------------------------
+
+    ### Green Block x1 (output filters=128)
+    x = Conv2D(
+        filters=128,
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        name='Dec_GT_ReduceDepth_128')(x4)
+    x = UpSampling2D(
+        size=2,
+        data_format='channels_first',
+        name='Dec_GT_UpSample_128')(x)
+    x = Add(name='Input_Dec_GT_128')([x, x3])
+    x = green_block(x, 128, name='Dec_GT_128')
+
+    ### Green Block x1 (output filters=64)
+    x = Conv2D(
+        filters=64,
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        name='Dec_GT_ReduceDepth_64')(x)
+    x = UpSampling2D(
+        size=2,
+        data_format='channels_first',
+        name='Dec_GT_UpSample_64')(x)
+    x = Add(name='Input_Dec_GT_64')([x, x2])
+    x = green_block(x, 64, name='Dec_GT_64')
+
+    ### Green Block x1 (output filters=32)
+    x = Conv2D(
+        filters=32,
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        name='Dec_GT_ReduceDepth_32')(x)
+    x = UpSampling2D(
+        size=2,
+        data_format='channels_first',
+        name='Dec_GT_UpSample_32')(x)
+    x = Add(name='Input_Dec_GT_32')([x, x1])
+    x = green_block(x, 32, name='Dec_GT_32')
+
+    ### Blue Block x1 (output filters=32)
+    x = Conv2D(
+        filters=32,
+        kernel_size=(3, 3),
+        strides=1,
+        padding='same',
+        data_format='channels_first',
+        name='Input_Dec_GT_Output')(x)
+
+    ### Output Block 
+    out_GT_S = Conv2D(
+        filters=output_channels,  # No. of tumor classes is 3
+        kernel_size=(1, 1),
+        strides=1,
+        data_format='channels_first',
+        activation='sigmoid',
+        name='Dec_GT_Output')(x)
+    
+    # ------------------------ CORONAL ----------
+    input_shapeC = (128,92,128)
+    c, H, W = input_shapeC
+    assert len(input_shapeC) == 4, "Input shape must be a 4-tuple"
+    assert (c % 4) == 0, "The no. of channels must be divisible by 4"
+    assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
+
+    # -------------------------------------------------------------------------
+    # Encoder
+    # -------------------------------------------------------------------------
+
+    ## Input Layer
+    inp = Input(input_shapeC)
 
     ## The Initial Block
     x = Conv2D(
@@ -293,22 +492,30 @@ def build_model(input_shape, output_channels, weight_L2=0.1, weight_KL=0.1, dice
         name='Input_Dec_GT_Output')(x)
 
     ### Output Block 
-    out_GT = Conv2D(
+    out_GT_C = Conv2D(
         filters=output_channels,  # No. of tumor classes is 3
         kernel_size=(1, 1),
         strides=1,
         data_format='channels_first',
         activation='sigmoid',
         name='Dec_GT_Output')(x)
-
+    
+    # --------------------------------------------------
+    merged = concatenate([out_GT_A, out_GT_S, out_GT_C], axis=-1)
+    fm = BatchNormalization()(merged)
+    fm = Dense(units=128, kernel_initializer=initializers.glorot_normal())(fm)
+    fm = LeakyReLU()(fm)
+    fm = BatchNormalization()(fm)
+    fm = Dropout(0.5)(fm)
+    prediction = Dense(units=numClass, activation='softmax')(fm)
+    # --------------------------------------------------
 
     # Build and Compile the model
-    out = out_GT
-    model = Model(inp, outputs=[out])  # Create the model
-    model.compile(
-        adam(lr=1e-4),
-        [loss_gt(dice_e)],
-        metrics=[dice_coefficient]
+    model = Model(inputs=[inpA, inpS, inpC], outputs=prediction) # Create the model
+    my_adam = optimizers.Adam(lr=0.0025, beta_1=0.9, beta_2=0.999, amsgrad=True)
+    my_loss = losses.categorical_crossentropy
+    model.compile(loss='categorical_crossentropy', optimizer=my_adam, metrics=['accuracy'])
+
     )
 
     return model

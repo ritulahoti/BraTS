@@ -2,7 +2,7 @@ import keras.backend as K
 from keras.losses import mse
 from keras.layers import Conv3D, Activation, Add, UpSampling3D, Lambda, Dense
 from keras.layers import Input, Reshape, Flatten, Dropout, SpatialDropout3D
-from keras.optimizers import adam, Adam
+from keras.optimizers import Adam
 from keras.models import Model
 try:
     from group_norm import GroupNormalization
@@ -452,7 +452,7 @@ def build_model(input_shape, output_channels, weight_L2=0.1, weight_KL=0.1, dice
     out = out_GT
     model = Model(inp, outputs=[out,out_VAE])  # Create the model
     model.compile(
-        adam(lr=1e-4),
+        Adam(lr=1e-4),
         [loss_gt(dice_e), loss_VAE(input_shape, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
         metrics=[dice_coefficient]
     )

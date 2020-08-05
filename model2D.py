@@ -1,6 +1,6 @@
 import keras.backend as K
 from keras.losses import mse
-from keras.layers import Conv2D, Activation, Add, UpSampling2D, Lambda, Dense
+from keras.layers import Conv2D, Activation, Add, UpSampling2D, Lambda, Dense,concatenate
 from keras.layers import Input, Reshape, Flatten, Dropout, SpatialDropout2D
 from keras.optimizers import Adam
 from keras.layers.advanced_activations import LeakyReLU

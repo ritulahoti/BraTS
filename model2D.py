@@ -108,7 +108,7 @@ def sampling(args):
     # -------------------------------------------------------------------------
     
 def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
-    input_shapeA = (92,128,128)
+    input_shapeA = (96,128,128)
     c, H, W = input_shapeA
     assert len(input_shapeA) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
@@ -239,7 +239,7 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         name='Dec_GT_Output')(x)
 
     # ---------------- SAGITTAL -----------
-    input_shapeS = (128,92,128)
+    input_shapeS = (128,96,128)
     c, H, W = input_shapeS
     assert len(input_shapeS) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
@@ -370,7 +370,7 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         name='Dec_GT_Output')(x)
     
     # ------------------------ CORONAL ----------
-    input_shapeC = (128,92,128)
+    input_shapeC = (128,96,128)
     c, H, W = input_shapeC
     assert len(input_shapeC) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"

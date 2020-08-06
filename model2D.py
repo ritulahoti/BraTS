@@ -107,8 +107,9 @@ def sampling(args):
     
     # -------------------------------------------------------------------------
     
-def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
+def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     input_shapeA = (96,128,128)
+    output_channels = 96
     c, H, W = input_shapeA
     assert len(input_shapeA) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
@@ -241,6 +242,7 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     # ---------------- SAGITTAL -----------
     input_shapeS = (128,96,128)
     c, H, W = input_shapeS
+    output_channels = 128
     assert len(input_shapeS) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
     assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"
@@ -372,6 +374,7 @@ def build_model(output_channels, weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
     # ------------------------ CORONAL ----------
     input_shapeC = (128,96,128)
     c, H, W = input_shapeC
+    output_channels = 128
     assert len(input_shapeC) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"
     assert (H % 16) == 0 and (W % 16) == 0, "All the input dimensions must be divisible by 16"

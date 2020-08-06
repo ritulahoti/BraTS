@@ -5,6 +5,7 @@ from keras.layers import Input, Reshape, Flatten, Dropout, SpatialDropout2D
 from keras.optimizers import Adam
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.normalization import BatchNormalization
+from keras import optimizers
 from keras import losses
 from keras.layers.core import Dropout, Activation, Flatten
 from keras.models import Model

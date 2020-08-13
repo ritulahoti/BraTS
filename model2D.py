@@ -19,7 +19,7 @@ except ImportError:
     from group_norm import GroupNormalization
 
 
-def green_block(inp, filters, data_format='channels_first', name=None):
+def green_block(inp, filters, data_format='channels_last', name=None):
     """
     green_block(inp, filters, name=None)
     ------------------------------------
@@ -62,7 +62,7 @@ def green_block(inp, filters, data_format='channels_first', name=None):
     # No. of groups = 8, as given in the paper
     x = GroupNormalization(
         groups=8,
-        axis=1 if data_format == 'channels_first' else 0,
+        axis=1 if data_format == 'channels_last' else 0,
         name=f'GroupNorm_1_{name}' if name else None)(inp)
     x = Activation('relu', name=f'Relu_1_{name}' if name else None)(x)
     x = Conv2D(
@@ -75,7 +75,7 @@ def green_block(inp, filters, data_format='channels_first', name=None):
 
     x = GroupNormalization(
         groups=8,
-        axis=1 if data_format == 'channels_first' else 0,
+        axis=1 if data_format == 'channels_last' else 0,
         name=f'GroupNorm_2_{name}' if name else None)(x)
     x = Activation('relu', name=f'Relu_2_{name}' if name else None)(x)
     x = Conv2D(

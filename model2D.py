@@ -107,8 +107,8 @@ def sampling(args):
 
 
 def dice_coefficient(y_true, y_pred):
-    intersection = K.sum(K.abs(y_true * y_pred), axis=[-3,-2,-1])
-    dn = K.sum(K.square(y_true) + K.square(y_pred), axis=[-3,-2,-1]) + 1e-8
+    intersection = K.sum(K.abs(y_true * y_pred), axis=[-2,-1])
+    dn = K.sum(K.square(y_true) + K.square(y_pred), axis=[-2,-1]) + 1e-8
     return K.mean(2 * intersection / dn, axis=[0,1])
 
 
@@ -137,8 +137,8 @@ def loss_gt(e=1e-8):
         
     """
     def loss_gt_(y_true, y_pred):
-        intersection = K.sum(K.abs(y_true * y_pred), axis=[-3,-2,-1])
-        dn = K.sum(K.square(y_true) + K.square(y_pred), axis=[-3,-2,-1]) + e
+        intersection = K.sum(K.abs(y_true * y_pred), axis=[-2,-1])
+        dn = K.sum(K.square(y_true) + K.square(y_pred), axis=[-2,-1]) + e
         
         return - K.mean(2 * intersection / dn, axis=[0,1])
     
@@ -158,8 +158,8 @@ def loss_VAE(input_shape, z_mean, z_var, weight_L2=0.1, weight_KL=0.1):
     Parameters
     ----------
      `input_shape`: A 4-tuple, required
-        The shape of an image as the tuple (c, H, W, D), where c is
-        the no. of channels; H, W and D is the height, width and depth of the
+        The shape of an image as the tuple (c, H, W), where c is
+        the no. of channels; H, W is the height, width of the
         input image, respectively.
     `z_mean`: An keras.layers.Layer instance, required
         The vector representing values of mean for the learned distribution
@@ -182,10 +182,10 @@ def loss_VAE(input_shape, z_mean, z_var, weight_L2=0.1, weight_KL=0.1):
         
     """
     def loss_VAE_(y_true, y_pred):
-        c, H, W, D = input_shape
-        n = c * H * W * D
+        c, H, W = input_shapeA
+        n = c * H * W 
         
-        loss_L2 = K.mean(K.square(y_true - y_pred), axis=(1, 2, 3, 4)) # original axis value is (1,2,3,4).
+        loss_L2 = K.mean(K.square(y_true - y_pred), axis=(1, 2, 3)) # original axis value is (1,2,3,4).
 
         loss_KL = (1 / n) * K.sum(
             K.exp(z_var) + K.square(z_mean) - 1. - z_var,

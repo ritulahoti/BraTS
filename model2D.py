@@ -109,8 +109,8 @@ def sampling(args):
     # -------------------------------------------------------------------------
     
 def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
-    input_shapeA = (96,128,128)
-    output_channels = 96
+    input_shapeA = (4,128,128)
+    output_channels = 1
     c, H, W = input_shapeA
     assert len(input_shapeA) == 3, "Input shape must be a 3-tuple"
     assert (c % 4) == 0, "The no. of channels must be divisible by 4"

@@ -61,7 +61,7 @@ def green_block(inp, filters, data_format='channels_last', name=None):
     # axis=1 for channels_first data format
     # No. of groups = 8, as given in the paper
     x = GroupNormalization(
-        groups=8,
+        groups=4,
         axis=1 if data_format == 'channels_last' else 0,
         name=f'GroupNorm_1_{name}' if name else None)(inp)
     x = Activation('relu', name=f'Relu_1_{name}' if name else None)(x)
@@ -74,7 +74,7 @@ def green_block(inp, filters, data_format='channels_last', name=None):
         name=f'Conv2D_1_{name}' if name else None)(x)
 
     x = GroupNormalization(
-        groups=8,
+        groups=4,
         axis=1 if data_format == 'channels_last' else 0,
         name=f'GroupNorm_2_{name}' if name else None)(x)
     x = Activation('relu', name=f'Relu_2_{name}' if name else None)(x)

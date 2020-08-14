@@ -151,7 +151,7 @@ def loss_VAE(input_shape, z_mean, z_var, weight_L2=0.1, weight_KL=0.1):
     Since keras does not allow custom loss functions to have arguments
     other than the true and predicted labels, this function acts as a wrapper
     that allows us to implement the custom loss used in the paper. This function
-    calculates the following equation, except for -L<dice> term. (i.e. VAE decoder part loss)
+    calculates the following equation, except for -L<dice> term. (i.e VAE decoder part loss)
     
     L = - L<dice> + weight_L2 âˆ— L<L2> + weight_KL âˆ— L<KL>
     
@@ -220,11 +220,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=1,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Input_x1')(inpA)
 
     ## Dropout (0.2)
-    x = SpatialDropout2D(0.2, data_format='channels_first')(x)
+    x = SpatialDropout2D(0.2, data_format='channels_last')(x)
 
     ## Green Block x1 (output filters = 32)
     x1 = green_block(x, 32, name='x1')
@@ -233,7 +233,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=2,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Enc_DownSample_32')(x1)
 
     ## Green Block x2 (output filters = 64)
@@ -244,7 +244,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=2,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Enc_DownSample_64')(x2)
 
     ## Green Blocks x2 (output filters = 128)
@@ -255,7 +255,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=2,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Enc_DownSample_128')(x3)
 
     ## Green Blocks x4 (output filters = 256)
@@ -276,11 +276,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=128,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_GT_ReduceDepth_128')(x4)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_GT_UpSample_128')(x)
     x = Add(name='Input_Dec_GT_128')([x, x3])
     x = green_block(x, 128, name='Dec_GT_128')
@@ -290,11 +290,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=64,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_GT_ReduceDepth_64')(x)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_GT_UpSample_64')(x)
     x = Add(name='Input_Dec_GT_64')([x, x2])
     x = green_block(x, 64, name='Dec_GT_64')
@@ -304,11 +304,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=32,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_GT_ReduceDepth_32')(x)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_GT_UpSample_32')(x)
     x = Add(name='Input_Dec_GT_32')([x, x1])
     x = green_block(x, 32, name='Dec_GT_32')
@@ -319,7 +319,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=1,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Input_Dec_GT_Output')(x)
 
     ### Output Block 
@@ -327,7 +327,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=output_channels,  # No. of tumor classes is 3
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         activation='sigmoid',
         name='Dec_GT_Output')(x)
     
@@ -342,7 +342,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=2,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_VD_Conv3D')(x)
 
     # Not mentioned in the paper, but the author used a Flattening layer here.
@@ -362,11 +362,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=256,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_ReduceDepth_256')(x)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_UpSample_256')(x)
 
     ### Green Block x1 (output filters=128)
@@ -374,11 +374,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=128,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_ReduceDepth_128')(x)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_UpSample_128')(x)
     x = green_block(x, 128, name='Dec_VAE_128')
 
@@ -387,11 +387,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=64,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_ReduceDepth_64')(x)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_UpSample_64')(x)
     x = green_block(x, 64, name='Dec_VAE_64')
 
@@ -400,11 +400,11 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=32,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_ReduceDepth_32')(x)
     x = UpSampling2D(
         size=2,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_UpSample_32')(x)
     x = green_block(x, 32, name='Dec_VAE_32')
 
@@ -414,7 +414,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         kernel_size=(3, 3),
         strides=1,
         padding='same',
-        data_format='channels_first',
+        data_format='channels_last',
         name='Input_Dec_VAE_Output')(x)
 
     ### Output Block
@@ -422,7 +422,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
         filters=4,
         kernel_size=(1, 1),
         strides=1,
-        data_format='channels_first',
+        data_format='channels_last',
         name='Dec_VAE_Output')(x) 
 
 

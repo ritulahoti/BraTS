@@ -1,4 +1,4 @@
-import keras.backend as K
+import tensorflow.keras.backend as K
 from keras.losses import mse
 from keras.layers import Conv2D, Activation, Add, UpSampling2D, Lambda, Dense,concatenate
 from keras.layers import Input, Reshape, Flatten, Dropout, SpatialDropout2D
@@ -428,7 +428,7 @@ def build_model(weight_L2=0.1, weight_KL=0.1, dice_e=1e-8):
 
     model = Model(inputs=inpA, outputs=[out_GT_A,out_VAE])
     model.compile(
-        Adam(lr=1e-4),
+        tf.keras.optimizers.Adam(lr=1e-4),
         [loss_gt(dice_e), loss_VAE(input_shapeA, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL)],
         metrics=[dice_coefficient]
     )
